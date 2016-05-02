@@ -1,14 +1,21 @@
  // access to JS files loaded in index.html above app.js
  var name = getQueryVariable('name') || 'Anonymous';
- var room = getQueryVariable('room');
+ var room = getQueryVariable('room') || 'General';
 
  //defined when you load socket.io library above
 var socket = io(); 
+console.log(`${name} joined room: ${room}`);
+// jQuery to fill out h1 tag with room name
+
+$('.room-title').text(`${room}`);
+
 
 socket.on('connect', function() {
     console.log('Connected to socket.io server!');
-    console.log(`${name} joined room: ${room}`);
-    //$('.messages').append(`<p>${name} joined room: ${room} </p>`);
+    socket.emit('joinRoom', {
+        name: name,
+        room: room
+    });
 });
 
 socket.on('message', function(message) {
