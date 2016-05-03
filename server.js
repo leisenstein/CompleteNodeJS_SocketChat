@@ -11,6 +11,29 @@ app.use(express.static(__dirname + '/public'));
 
 var clientInfo = {};  // set to empty object so it can be used later
 
+function sendCurrentUsers(socket) {
+    var info = clientInfo[socket.id];
+    var users = [];
+
+    if(typeof info === 'undefined') {
+        return;
+    }
+
+    Object.keys(clientInfo).forEach(function(socketId) {
+        var userInfo = clientInfo[socketId];
+        if(info.room === userInfo.room) {
+            users.push(userInfo.name);
+        }
+    });
+
+    socket.emit('message', {
+        name: 'System',
+        text: 'Current users: ' + users.join(', '),
+        timestamp: moment().valueOf()
+    });
+
+}
+
 io.on('connection', function(socket) {
     console.log('User connected via socket.io!');
 
@@ -41,13 +64,18 @@ io.on('connection', function(socket) {
 
 
 
-    socket.on('message', function (message) {
-         message.timespamp = moment().valueOf();
+    socket.on('message', function (message) {    
          console.log('Message received: ' + message.text);
-         // socket.broadcase.emit sends to all EXCEPT current connection
-
-         // ONLY emit the MESSAGE to members in the same room as the current client connection
-         io.to(clientInfo[socket.id].room).emit('message', message); 
+         
+         if(message.text === '@currentUsers') {
+            sendCurrentUsers(socket);
+         } else {
+            message.timespamp = moment().valueOf();
+            // socket.broadcase.emit sends to all EXCEPT current connection
+            // ONLY emit the MESSAGE to members in the same room as the current client connection
+            io.to(clientInfo[socket.id].room).emit('message', message); 
+         }
+         
     });
 
     // custom event
